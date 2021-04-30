@@ -29,8 +29,9 @@ class functionCharaCallBacks : public BLECharacteristicCallbacks{
   }
   void onWrite(BLECharacteristic* pCharacteristic){
     std::string str = pCharacteristic->getValue();
-    ledVal = 
-    Serial.println(str.c_str());
+    String val(str.c_str());
+    bInAlarm = val.toInt();
+    Serial.println(bInAlarm);
   }
   
 };
