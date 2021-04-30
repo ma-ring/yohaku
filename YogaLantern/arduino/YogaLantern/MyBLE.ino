@@ -1,7 +1,7 @@
 #include "BLEDevice.h"
 
-int heartRate = 7000;
-int ledVal = 0;
+int heartRate = 1000; //0-1023
+int sortedVal = 0; //0-4096 -> 0-120
 
 static std::string DEVICE_NAME = "YogaLantern";
 static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
@@ -30,8 +30,8 @@ class functionCharaCallBacks : public BLECharacteristicCallbacks{
   void onWrite(BLECharacteristic* pCharacteristic){
     std::string str = pCharacteristic->getValue();
     String val(str.c_str());
-    bInAlarm = val.toInt();
-    Serial.println(bInAlarm);
+    sortedVal = val.toInt();
+    Serial.println(sortedVal);
   }
   
 };
