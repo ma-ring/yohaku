@@ -42,8 +42,8 @@ void HSV2RGB(int h, int s, int v, int& r, int& g, int& b){
 //-----------------------------------------------------------------------------------------------
 
 int HeartBeatSetup(){
-  //pinMode(PIN_HEARTBEAT, INPUT);
- // analogReadResolution(10);   
+  pinMode(PIN_HEARTBEAT, INPUT);
+  analogReadResolution(10);   
 }
 
 int HeartBeatLoop(){

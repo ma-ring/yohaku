@@ -2,9 +2,10 @@
 class MyPWM {
   private:
     int pin;
-    int highTime;
+    int highTime = 0;
     int nextHighTime;
-    const int itv = 2000;
+    int pastTime = 0;
+    const int itv = 200;
     const int res = 1024;
     unsigned long preTime;
     bool flagHIGH = true;
@@ -13,40 +14,39 @@ class MyPWM {
     void write(int pwm) {
       pwm = max(0, pwm);
       pwm = min(res, pwm);
-      nextHighTime = itv * pwm / res;
-
+      nextHighTime = ( itv * pwm ) / res;
     }
     void loop() {
       unsigned long currenttime = micros();
-      if (flagHIGH) {
-        if (currenttime - preTime > highTime) {
-          digitalWrite(pin, LOW);
-          flagHIGH = false;
-          preTime = currenttime;
-          //Serial.println("HIGH");
-        }
+      pastTime = currenttime - preTime;
+      if ( pastTime > itv) {
+        flagHIGH = true;
+        preTime = micros();
+      } else if ( pastTime > nextHighTime ) {
+        flagHIGH = false;
       }
-      else {
-        if (currenttime - preTime > itv - highTime) {
-          digitalWrite(pin, HIGH);
-          flagHIGH = true;
-          preTime = currenttime;
-          if (highTime != nextHighTime) {
-            highTime = nextHighTime;
-          }
-        }
+      
+      if (flagHIGH) {
+        digitalWrite(pin , HIGH);
+      } else {
+        digitalWrite(pin , LOW);
       }
     }
+
     void setup(int _pin, int pwm) {
       pin = _pin;
       pinMode(pin, OUTPUT);
       digitalWrite(pin, LOW);
       highTime = itv * pwm / res;
       write(pwm);
+      preTime = micros();
       //Serial.println(nextHighTime);
     }
+
     void stop() {
       digitalWrite(pin, LOW);
       write(0);
+      flagHIGH = false;
     }
+
 };
