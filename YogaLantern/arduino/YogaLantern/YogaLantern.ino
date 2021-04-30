@@ -2,6 +2,9 @@
 #include "MyHR.h"
 #include "D2to40.h"
 #include "MyPWM.h"
+#include "MyBLE.h"
+#include "MyLedBlink.h"
+
 #define PIN_R 8
 #define PIN_G 9
 #define PIN_B 10
@@ -67,6 +70,9 @@ void setup() {
   delay(3000);
   InitOutputVib();
   digitalWrite(PIN_FREC_MOTER, LOW);
+
+  //ble
+  setupBLE();
 }
 
 void loop() {
@@ -187,7 +193,18 @@ void loop() {
   } else {
     InitOutputLed();
   }
+
+  //LED
+  updateBLE(100); //100->heartRate
+  setPeriod(sortedVal);
+  blinkLed();
 }
+
+
+int blinkLED(){
+  sortedVal;
+}
+
 
 void InitOutputVib() {
   vib_motor.write(0);

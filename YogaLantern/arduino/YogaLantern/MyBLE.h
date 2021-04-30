@@ -59,6 +59,12 @@ void setupBLE(){
   pAdvertising->start();
 }
 
-void updateBLE(){
-  //fakeNum ++ ;
+void updateBLE(int val){
+  if(deviceConnected){
+    //
+  }
+  else{
+    //
+    sortedVal = 120 * val/ 1023;
+  }
 }
