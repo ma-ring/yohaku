@@ -4,6 +4,8 @@
 #include "TFT_eSPI.h"
 
 #define BLE_MODE_TEXT 'A'
+#define BLE_MODE_TEXT_J 'J'
+#define BLE_MODE_TEXT_E 'E'
 #define BLE_MODE_DRAW_S 'B'
 #define BLE_MODE_DRAW 'C'
 #define BLE_MODE_DRAW_E 'D'
@@ -15,30 +17,38 @@ BLECharacteristic *pCharacteristic;   // キャラクタリスティック
 bool deviceConnected = false;           // デバイスの接続状態
 bool bInAlarm  = false;                 // デバイス異常判定
 
+static int FONT_NUM_MAX = 11;
+
 TFT_eSPI tft = TFT_eSPI();
 #define FIRST_SCREEN 5
-#define SECOND_SCREEN 21
+#define SECOND_SCREEN 27
 
-String displayStr = "";
+//String displayStr = ""; 
+std::string preStr = "";
+std::string displayStr = "こんにちは";
+std::string displayStrJ = "";
+std::string displayStrE = "";
+char emotion = '2';
 bool isDrawing = false;
 bool isDraw = false;
+bool isTranslated = false;
 int pos_x, pos_y, pre_x, pre_y;
 
 //SET UP BLE /////////////////////////////////
 //callback for server 
 class functionServerCallBacks : public BLEServerCallbacks{
   void onConnect(BLEServer* pServer){
-    Serial.println("BLE CONNECTED");
+    //Serial.println("BLE CONNECTED");
   }
   void onDisconnect(BLEServer* pServer){
     
-    Serial.println("BLE DISCONNECTED");
+    //Serial.println("BLE DISCONNECTED");
   }
 };
 //callback for characteristic
 class functionCharaCallBacks : public BLECharacteristicCallbacks{
   void onRead(BLECharacteristic* pCharacteristic){
-    Serial.println("read");
+    //Serial.println("read");
   }
   void onWrite(BLECharacteristic* pCharacteristic){
     std::string str = pCharacteristic->getValue();
@@ -46,11 +56,23 @@ class functionCharaCallBacks : public BLECharacteristicCallbacks{
     str =  str.erase(0,1);
 
     if(head == BLE_MODE_TEXT){
-       displayStr = str.c_str();
+       isTranslated = true;
+       emotion = str[0];
+       str =  str.erase(0,1);
+       displayStr = str;//.c_str();
+    }
+    else if(head == BLE_MODE_TEXT_J){
+       isTranslated = false;
+       emotion = str[0];
+       str =  str.erase(0,1);
+       displayStr = str;//.c_str();
 //       for(int i = 0; i < str.length(); i++){
 //         Serial.print(str[i]);
 //       }
 //       Serial.println("");
+    }
+    else if(head == BLE_MODE_TEXT_E){
+      displayStrE = str;
     }
     else if(head == BLE_MODE_DRAW_S){
       
@@ -70,7 +92,7 @@ class functionCharaCallBacks : public BLECharacteristicCallbacks{
        String str_x = (str.erase(token)).c_str();
        pos_x = str_x.toInt();
        pos_y = str_y.toInt();
-       Serial.println("update");
+       //Serial.println("update");
        if(!isDrawing){
          pre_x = pos_x;
          pre_y = pos_y;
@@ -115,11 +137,19 @@ void setupTFT(){
   digitalWrite(SECOND_SCREEN, HIGH);
   digitalWrite(FIRST_SCREEN, LOW);
   digitalWrite(SECOND_SCREEN, LOW);
+
+  if(!SPIFFS.begin(true)){
+    tft.init();
+    tft.setFreeFont(FF4);
+    tft.setTextSize(1);
+  }else{
+    tft.begin();
+    tft.loadFont("Latin-Hiragana-24");
+  }
   
-  tft.begin();
-  tft.setRotation(1);
-  tft.setFreeFont(FF18);
-  tft.setTextSize(30);
+  //tft.begin();
+  //tft.setRotation(3);
+  
   digitalWrite(FIRST_SCREEN, HIGH);
   digitalWrite(SECOND_SCREEN, HIGH);
   
@@ -131,11 +161,12 @@ void setupTFT(){
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  //Serial.begin(9600);
  
   setupTFT();
   setupBLE();
 }
+
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -148,21 +179,45 @@ void loop() {
     pre_y = pos_y;
     isDraw = false;
   }else{
-    digitalWrite(FIRST_SCREEN, LOW);
-    //tft.fillScreen(TFT_BLACK);
-    //tft.drawString("TEST WRITING",10,10);
-    tft.drawString(displayStr,10,50);
-    digitalWrite(FIRST_SCREEN, HIGH);
-  
-    digitalWrite(FIRST_SCREEN, LOW);
-    //tft.fillScreen(TFT_BLACK);
-    //tft.drawString("TEST WRITING",10,10);
-    tft.drawString(displayStr,10,50);
-    digitalWrite(FIRST_SCREEN, HIGH);
-  
-    delay(1000);
-  }
+    if(preStr != displayStr){
+      String text = "";
 
-  
+      //draw on 1st display
+      digitalWrite(FIRST_SCREEN, LOW);
+      tft.setRotation(3);
+      tft.fillScreen(TFT_BLACK);
+      if(!isTranslated){
+         tft.setCursor(0,0);
+         tft.println(displayStr.c_str());
+      }
+      else{
+        int line = displayStr.size() / FONT_NUM_MAX;
+        for(int i = 0; i < line + 1; i++){
+          text = (displayStr.substr(i * FONT_NUM_MAX, FONT_NUM_MAX)).c_str();
+          tft.drawString(text,0,40 * i);
+        }
+      }
+      
+      digitalWrite(FIRST_SCREEN, HIGH);
+      //delay(2000);
+      
+      //draw on 2nd display
+      digitalWrite(SECOND_SCREEN, LOW);
+      tft.setRotation(1);
+      tft.fillScreen(TFT_BLACK);
+      switch(emotion){
+        case '0': tft.drawString("angry",10,10); break;
+        case '1': tft.drawString("sad",10,10); break;
+        case '2': tft.drawString("neutral",10,10); break;
+        case '3': tft.drawString("joy",10,10); break;
+        case '4': tft.drawString("happy",10,10); break;
+      }
+      digitalWrite(SECOND_SCREEN, HIGH);
+      delay(100);
+      
+      preStr = displayStr;
+    }
+   
+  }
   
 }
